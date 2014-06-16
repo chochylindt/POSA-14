@@ -12,12 +12,36 @@ import java.util.concurrent.locks.Condition;
  */
 public class SimpleSemaphore {
     /**
+     * Define a ReentrantLock to protect the critical section.
+     */
+    // TODO - you fill in here
+	ReentrantLock mLock; 
+	
+    /**
+     * Define a ConditionObject to wait while the number of
+     * permits is 0.
+     */
+    // TODO - you fill in here
+	Condition countCond;
+	
+    /**
+     * Define a count of the number of available permits.
+     */
+    // TODO - you fill in here.  Make sure that this data member will
+    // ensure its values aren't cached by multiple Threads..
+	volatile int permits, count;
+	
+    /**
      * Constructor initialize the data members.  
      */
     public SimpleSemaphore (int permits,
                             boolean fair)
     { 
         // TODO - you fill in here
+    	count = permits;
+    	this.permits = permits;
+    	mLock = new ReentrantLock(fair);
+    	countCond = mLock.newCondition();
     }
 
     /**
@@ -26,6 +50,17 @@ public class SimpleSemaphore {
      */
     public void acquire() throws InterruptedException {
         // TODO - you fill in here
+    	mLock.lockInterruptibly();
+    	try{
+    		while(count==0){
+    			countCond.await(); //wait on the condition if semaphore unavailable
+    		}
+    		count--; //reduce the count now that I have it.
+    		countCond.signal(); // signal any thread waiting on the condition
+    		
+    	}finally{
+    		mLock.unlock();
+    	}
     }
 
     /**
@@ -34,6 +69,17 @@ public class SimpleSemaphore {
      */
     public void acquireUninterruptibly() {
         // TODO - you fill in here
+    	mLock.lock();
+    	try{
+    		while(count==0){
+    			countCond.awaitUninterruptibly(); //will continue to wait even if interrupted
+    		}
+    		count--; //reduce the count now that I have it.
+    		countCond.signal(); // signal any thread waiting on the condition
+    		
+    	}finally{
+    		mLock.unlock();
+    	}
     }
 
     /**
@@ -41,21 +87,28 @@ public class SimpleSemaphore {
      */
     void release() {
         // TODO - you fill in here
+    	mLock.lock();
+    	try{
+    		while(count == permits){
+    			countCond.awaitUninterruptibly(); // continue to wait until a permit is taken
+    			// the above should not happen if the semaphore is used correctly
+    			// i.e. a permit is acquired before released
+    		}
+    		count++;
+    		countCond.signal();
+    	}finally{
+    		mLock.unlock();
+    	}
     }
-
+    
     /**
-     * Define a ReentrantLock to protect the critical section.
+     * Return the number of permits available.
      */
-    // TODO - you fill in here
-
-    /**
-     * Define a ConditionObject to wait while the number of
-     * permits is 0.
-     */
-    // TODO - you fill in here
-
-    /**
-     * Define a count of the number of available permits.
-     */
-    // TODO - you fill in here
+    public int availablePermits(){
+    	// TODO - you fill in here
+    	// a lock here is not necessary 
+    	// but may not seem consistent to a reading thread
+    	return count; 
+    }
 }
+
