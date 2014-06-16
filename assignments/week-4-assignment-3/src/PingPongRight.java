@@ -2,7 +2,6 @@
 // Import the necessary Java synchronization and scheduling classes.
 import java.util.concurrent.CountDownLatch;
 
-import edu.vuum.mocca.SimpleSemaphore;
 /**
  * @class PingPongRight
  * 
